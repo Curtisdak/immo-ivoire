@@ -11,7 +11,7 @@ try {
     const body = await req.json()
     const { firstname, lastname, email, phone } = body
 
-    if (!firstname || !lastname || !email || !phone) {
+    if (!firstname || !lastname || !email ) {
         return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
       }
 
@@ -29,7 +29,7 @@ try {
             firstname,
             lastname,
             email,
-            phone,
+            phone:phone || null,
         }
       })
 

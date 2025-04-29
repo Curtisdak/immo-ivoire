@@ -64,7 +64,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="w-screen h-full flex bg-background">
+    <div className="w-screen h-full flex ">
       <div className="hidden  lg:flex flex-col bg-primary text-accent w-full h-screen items-center justify-center">
         <h2 className="text-4xl font-extrabold mb-4">Connectez-vous sur Serik Immo</h2>
         <p className="text-xl text-center ">
@@ -72,9 +72,9 @@ const LoginPage = () => {
         </p>
       </div>
 
-      <div className="bg-secondary-foreground w-full h-screen flex items-center justify-center">
+      <div className=" w-full h-screen flex items-center justify-center">
         <div className="p-6 w-full max-w-md">
-          <div className="flex lg:hidden flex-col justify-center text-center items-center mb-5 text-accent">
+          <div className="flex lg:hidden flex-col justify-center text-center items-center mb-5 ">
             <h2 className="text-5xl font-extrabold mb-2  ">
             Connectez-vous sur Serik Immo!
             </h2>
@@ -101,9 +101,9 @@ const LoginPage = () => {
                   name={name as keyof z.infer<typeof formSchema>}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-accent">{label}</FormLabel>
+                      <FormLabel className="">{label}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder={label} className="text-accent border-0  bg-foreground" />
+                        <Input {...field} placeholder={label} className=" border-0  bg-input" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -115,7 +115,7 @@ const LoginPage = () => {
                Se connecter
               </Button>
             </form>
-            <Link href="/register" className="text-accent underline hover:text-primary ">Si vous n&apos;avez pas de compte, creez un compte ici </Link>
+            <Link href="/register" className="text-accent-foreground underline ">Si vous n&apos;avez pas de compte, creez un compte ici </Link>
           </Form>
         </div>
       </div>

@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 const NavBar = () => {
   const isConected: boolean = false;
   return (
-    <div className="bg-background  flex justify-between items-center sticky  ">
+    <div className="bg-background  flex justify-between items-center sticky w-full  ">
       <Link href="./">
-        <p className="font-bold text-accent-foreground drop-shadow-accent-foreground drop-shadow-md p-3 ">
+        <p className="font-bold text-primary  p-3 ">
           {" "}
           Serik Immo{" "}
         </p>
@@ -40,8 +40,8 @@ const NavBar = () => {
             </Link>
           </div>
         ) : (
-          <Link href="/register">
-            <Button variant="outline">Se connecter</Button>
+          <Link href="/login">
+            <Button variant="ghost">Se connecter</Button>
           </Link>
         )}
         <ModeToggle />
