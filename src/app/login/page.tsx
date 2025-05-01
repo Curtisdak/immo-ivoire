@@ -42,7 +42,6 @@ const LoginPage = () => {
     try {
       setServerError("");
       const res = await fetch("/api/auth/register", {
-        // ✅ Corrected here
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -74,8 +73,9 @@ const LoginPage = () => {
 
       <div className=" w-full h-screen flex items-center justify-center">
         <div className="p-6 w-full max-w-md">
-          <div className="flex lg:hidden flex-col justify-center text-center items-center mb-5 ">
-            <h2 className="text-5xl font-extrabold mb-2  ">
+          
+          <div  className="flex lg:hidden flex-col justify-center text-center items-center mb-5 ">
+            <h2 className="text-5xl font-extrabold mb-2  text-primary ">
             Connectez-vous sur Serik Immo!
             </h2>
             <p className="text-lg text-muted-foreground">
@@ -115,7 +115,7 @@ const LoginPage = () => {
                Se connecter
               </Button>
             </form>
-            <Link href="/register" className="text-accent-foreground underline ">Si vous n&apos;avez pas de compte, creez un compte ici </Link>
+            <Link href="/register" className="text-primary underline hover:text-accent-foreground ">Si vous n&apos;avez pas de compte, creez un compte ici </Link>
           </Form>
         </div>
       </div>

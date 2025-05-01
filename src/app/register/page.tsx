@@ -51,7 +51,7 @@ const RegisterPage = () => {
     try {
       setServerError("");
       setIsLoading(true);
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/registers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
@@ -70,7 +70,7 @@ const RegisterPage = () => {
     } catch (error) {
       console.log(error);
       toast("🚨 Erreur inattendue,veuillez réessayer");
-      router.push("/error")
+      router.push("/error?message=Impossible+de+se+connecter+à+la+base+de+données");
     } finally {
       setIsLoading(false);
     }
