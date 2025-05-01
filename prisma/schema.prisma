@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  firstname     String
+  lastname      String
+  email         String         @unique
+  phone         String?        @unique
+  emailVerified Boolean        @default(false)
+  phoneVerified Boolean        @default(false)
+  role          Role           @default(USER)
+  otp           String?
+  otpExpiresAt  DateTime?
+  otpAttempts   Int            @default(0)
+  bookmarks     Bookmark[]
+  interests     Interest[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  House         House[]
+}
+
+model House {
+  id               String      @id @default(uuid())
+  title            String
+  description      String
+  price            Float
+  location         String
+  propertyType     String?
+  rooms            Int // Total rooms (e.g. living room, kitchen, bedrooms)
+  bedrooms         Int // Number of bedrooms
+  isSwimmingPool   Boolean     @default(false)
+  isPrivateParking Boolean     @default(false)
+  propertySize     Float // e.g., in m²
+  landSize         Float // e.g., in m²
+  viewCount        Int         @default(0)
+  status           HouseStatus @default(AVAILABLE)
+  imageUrls        String[] // Cloudinary URLs (limit 15 in app logic)
+  postedById       String
+  postedBy         User        @relation(fields: [postedById], references: [id])
+  interests        Interest[]
+  bookmarks        Bookmark[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model Interest {
+  id        String   @id @default(uuid())
+  userId    String
+  houseId   String
+  user      User     @relation(fields: [userId], references: [id])
+  house     House    @relation(fields: [houseId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  houseId   String
+  user      User     @relation(fields: [userId], references: [id])
+  house     House    @relation(fields: [houseId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  content   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+}
+
+model SystemControl {
+  id              Int      @id @default(1)
+  allowAdmins     Boolean  @default(true)
+  allowSuperAdmins Boolean @default(true)
+  updatedAt         DateTime @updatedAt
+}
+
+
+enum Role {
+  USER
+  ADMIN
+  SUPERADMIN
+  CREATOR
+}
+
+enum HouseStatus {
+  AVAILABLE
+  SOLD
+  PENDING
+}
+
+enum NotificationType {
+  INTEREST
+  SYSTEM
+}
+
+
