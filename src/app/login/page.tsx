@@ -18,49 +18,53 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { LoadingPage, LoadingSpinner } from "../components/LoadingSpinner";
 
 const formSchema = z.object({
   email: z.string().email("Adresse email invalide").trim(),
-  phone: z
-    .string()
-    .min(8, "Le numéro de téléphone doit contenir au moins 8 chiffres"),
 });
 
 const LoginPage = () => {
   const router = useRouter();
-  const [serverError, setServerError] = useState("");
+  const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
-      phone: "",
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      setServerError("");
-      const res = await fetch("/api/auth/register", {
+      setIsLoading(true)
+   
+      const res = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
       const data = await res.json();
+
       if (!res.ok) {
-        setServerError(data.error || "L'inscription a échoué");
-        toast("❌ Échec de l'inscription");
+        toast.error( data.console.error ||  "❌ Échec de l'envoi du code");
       } else {
-        toast(
-          "✅ Inscription réussie ! Vous pouvez maintenant vous connecter."
+        toast.success(
+          "✅ Code a été envoyé par email."
         );
-        router.push("/login");
+        router.push(`/otp?email=${values.email}`);
       }
     } catch (error) {
       console.log(error);
       toast("🚨 Erreur inattendue,veuillez réessayer");
+    } finally{
+      setIsLoading(false)
     }
   };
+
+  if(isLoading){
+    return <LoadingPage/>
+  }
 
   return (
     <div className="w-screen h-full flex ">
@@ -86,33 +90,25 @@ const LoginPage = () => {
           <h1 className="text-primary font-bold mb-4 text-2xl">
           Connectez-vous
           </h1>
-
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 ">
-              {[
-               
-               
-                { name: "email", label: "Adresse email" },
-                { name: "phone", label: "Numéro de téléphone" },
-              ].map(({ name, label }) => (
-                <FormField
-                  key={name}
-                  control={form.control}
-                  name={name as keyof z.infer<typeof formSchema>}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="">{label}</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder={label} className=" border-0  bg-input" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
-              
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-primary">Adresse email</FormLabel>
+                  <FormControl>
+                    <Input className="border-0  bg-input text-accent-foreground" placeholder="exemple@email.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+
               <Button type="submit" className="w-full my-4">
-               Se connecter
+              {isLoading ? <LoadingSpinner /> : "Envoyer le code"}
               </Button>
             </form>
             <Link href="/register" className="text-primary underline hover:text-accent-foreground ">Si vous n&apos;avez pas de compte, creez un compte ici </Link>

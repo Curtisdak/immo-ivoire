@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import {cookies} from "next/headers"
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +20,14 @@ export async function POST(req: Request) {
     // Vérifie l'expiration
     const now = new Date();
     if (now > user.otpExpiresAt) {
+        await prisma.user.update({
+            where: { email },
+            data: {
+              otp: null,
+              otpExpiresAt: null,
+              otpAttempts: 0,
+            },
+          });
       return NextResponse.json({ error: "Code expiré, veuillez en demander un nouveau." }, { status: 400 });
     }
 
@@ -47,7 +57,31 @@ export async function POST(req: Request) {
 
     //  générer un JWT ou une session ici
 
-    return NextResponse.json({ success: true, message: "Connexion réussie", user });
+    const token  = jwt.sign(
+        {
+        id:user.id,
+        email:user.email,
+        role:user.role,
+    },
+    process.env.JWT_SECRET!,
+    {expiresIn:"365d"}
+);
+
+// Stocke le token dans un cookie HTTPOnly 
+
+ (await
+          // Stocke le token dans un cookie HTTPOnly 
+          cookies()).set("token", token, {
+    httpOnly:true,
+    secure:process.env.NODE_ENV==="production",
+    path:"/",
+    maxAge:60 * 60 * 24 * 365,
+    sameSite:"lax",
+
+} )
+
+
+    return NextResponse.json({ success: true, message: "Connexion réussie", user});
   } catch (error) {
     console.error("Erreur vérification OTP :", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

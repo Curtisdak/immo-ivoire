@@ -1,7 +1,7 @@
 
 import { prisma } from '@/lib/prisma' 
 import { NextResponse } from "next/server";
-import {errorResponse} from "@/lib/errorHandler"
+import errorResponse from "@/lib/errorHandler"
 
 
 
