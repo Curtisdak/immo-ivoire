@@ -1,43 +1,35 @@
-
-import { prisma } from '@/lib/prisma' 
+// src/app/api/auth/register/route.ts
 import { NextResponse } from "next/server";
-import errorResponse from "@/lib/errorHandler"
+import { prisma } from "@/lib/prisma";
+import { hash } from "bcryptjs";
 
+export async function POST(req: Request) {
+  try {
+    const { firstname, lastname, email, password } = await req.json();
 
+    if (!firstname || !lastname || !email || !password) {
+      return NextResponse.json({success: false, error: "Champs requis manquants" }, { status: 400 });
+    }
 
-export  async function POST(req:Request){
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json({ success: false, error: "Email déjà utilisé" }, { status: 409 });
+    }
 
-try {
-    const body = await req.json()
-    const { firstname, lastname, email, phone } = body
+    const hashedPassword = await hash(password, 10);
 
-    if (!firstname || !lastname || !email ) {
-        return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-      }
+    const user = await prisma.user.create({
+      data: {
+        firstname,
+        lastname,
+        email,
+        hashedPassword,
+      },
+    });
 
-      const existingUser = await prisma.user.findFirst({
-        where:{OR:[{email},{phone}]},
-      })
-
-
-      if(existingUser){
-        return NextResponse.json({success:false, error:"User already exists"},{status:409})
-      }
-
-      const newUser = await prisma.user.create({
-        data:{
-            firstname,
-            lastname,
-            email,
-            phone:phone || null,
-        }
-      })
-
-      return NextResponse.json({ success:true, message: 'User registered', user: newUser }, { status: 201 })
-
-} catch (error) {
-    console.error('Registration error:', error)
-    return errorResponse('Internal server error', 500)
-}
-
+    return NextResponse.json({ success: true, message:"Vous êtes bien enregistré", user });
+  } catch (error) {
+    console.error("Erreur inscription :", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
 }
