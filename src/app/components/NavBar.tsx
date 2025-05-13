@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { signOut, useSession  } from "next-auth/react";
 
 
+
 const NavBar = () => {
   const {data:session}= useSession();
   const user = session?.user
@@ -17,7 +18,7 @@ const NavBar = () => {
       <Link href="/">
         <p className="font-bold text-primary  p-3 ">
           {" "}
-          Serik Immo{" "} {user.role}
+          Serik Immo{" "} {user?.role}
         </p>
       </Link>
 
