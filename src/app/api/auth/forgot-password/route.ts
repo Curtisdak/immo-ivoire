@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const resetToken = Math.floor(10000000 + Math.random() * 90000000).toString();
+    const resetToken = Math.floor(1000000000000 + Math.random() * 9000000000000).toString() + "serik.dev";
     const tokenExpireAt = new Date(Date.now() + 1000 * 60 * 10);
 
     await prisma.user.update({
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const resetUrl = `${process.env.NEXTAUTH_UR}/pages/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXTAUTH_URL}/pages/reset-password?token=${resetToken}`;
 
     await transporter.sendMail({
       from: `"Serik Immo"<${process.env.EMAIL_USER}> `,
@@ -43,18 +43,18 @@ export async function POST(req: Request) {
       subject: "Réinitialisation de votre mot de passe",
       html: `
              <h2>Demande de réinitialisation</h2>
-             <p>Bonjour ${user.firstname} </p>
+             <p>Bonjour <strong> ${user.firstname} </strong> </p>
              <p> Voici votre lien pour réinitialiser votre mot de passe : </p>
-             <a href="${resetUrl}" target="_blank">${resetUrl}</a>
-             <p>Ce lien expire dans <strong> 15 minutes </strong> .</p>
+             <a href="${resetUrl}" rel="noopener noreferrer">${resetUrl}</a>
+             <p>Ce lien expire dans <strong> 10 minutes </strong> .</p>
             `,
     });
 
-    return NextResponse.json({success:true, message:"Email envoyé avec le lien de réinitialisation"},{status:400})
+    return NextResponse.json({success:true, message:"Email envoyé avec le lien de réinitialisation"},{status:200})
     
 
   } catch (error) {
     console.error("Erreur forgot-password:", error);
-    errorResponse("error server", 500);
+    return errorResponse("error server", 500);
   }
 }

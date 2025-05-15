@@ -8,7 +8,6 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-
 import {
   Form,
   FormControl,
@@ -47,21 +46,28 @@ export default function LoginPage() {
       redirect: false,
       ...values,
     });
-  
 
     if (res?.error) {
       toast.error("Identifiants incorrects");
-      router.push("/pages/error?message:Identifiants incorrects");
+      router.push("/pages/error?message=Identifiants+incorrects+,+verifiez+votre+mot+de+passe");
     } else {
       setLoading(false);
       toast.success("Connexion réussie");
-      if(res?.url){
-       router.push(res.url);
-     
-      } 
-      
+      if (res?.url) {
+        router.push(res.url);
+      }
     }
   };
+
+  const forgetPasswordPath = ()=>{
+    const value = form.getValues("email");
+    if(value){
+      return router.push(`/pages/forgot-password?userEmail=${value}`)
+    }
+    return router.push(`/pages/forgot-password`)
+  }
+
+
   if (loading) {
     return <LoadingPage />;
   }
@@ -103,7 +109,6 @@ export default function LoginPage() {
                       type={showPassword ? "text" : "password"}
                       placeholder={"mot de passe"}
                       disabled={loading}
-                     
                     />
                     <Button
                       type="button"
@@ -123,6 +128,17 @@ export default function LoginPage() {
               </FormItem>
             )}
           />
+{/*                         -                  ----------------------                        */ }
+          <div className="flex justify-end">
+              <Button
+               variant={'link'}
+               type="button"
+                className="text-primary hover:underline "
+               onClick={forgetPasswordPath} 
+              >
+                J&apos;ai oublié mon mot de passe 
+              </Button>
+          </div>
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Connexion..." : "Se connecter"}
@@ -146,11 +162,14 @@ export default function LoginPage() {
               <p> Ou </p>
             </div>
             <Button
-            type="button"
+              type="button"
               variant="outline"
               className="w-full mt-4 p-6  animate-pulse"
               onClick={() => signIn("google")}
-            >  Connectez-vous avec <strong>Google</strong>  </Button>
+            >
+              {" "}
+              Connectez-vous avec <strong>Google</strong>{" "}
+            </Button>
           </div>
         </form>
       </Form>
