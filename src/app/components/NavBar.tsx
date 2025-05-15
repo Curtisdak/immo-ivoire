@@ -1,46 +1,53 @@
+'use client';
 import { Bell, Heart, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
-import React from "react";
 import SideBar from "./SideBar";
 import { ModeToggle } from "./ModeToggle";
 import { Button } from "@/components/ui/button";
+import { signOut, useSession  } from "next-auth/react";
+
+
 
 const NavBar = () => {
-  const isConected: boolean = false;
+  const {data:session}= useSession();
+  const user = session?.user
+
+  
   return (
     <div className="bg-background  flex justify-between items-center sticky w-full  ">
-      <Link href="./">
+      <Link href="/">
         <p className="font-bold text-primary  p-3 ">
           {" "}
-          Serik Immo{" "}
+          Serik Immo{" "} {user?.role}
         </p>
       </Link>
 
       <ul className="hidden lg:flex justify-between items-center gap-4 w-30% p-3 font-bold text-foreground">
-        <li className="">Trouver votre maison</li>
+        <Link href={"/pages/properties"}> <li className="">Trouver votre maison</li></Link>
         <li>Comment ça functionne?</li>
         <li>Nous Contacter</li>
+        {user?.id&&<button onClick={()=> signOut({callbackUrl:"/"})}>deconnextion</button>}
       </ul>
 
       <div className="flex items-center gap-5 justify-between p-3">
-        {isConected ? (
+        {user?.id ? (
           <div className="flex items-center gap-5 justify-between p-3">
-            <Link href="/likes">
+            <Link href="/pages/likes">
               <Heart className="cursor-pointer hover:scale-140 hover:text-primary ease-in duration-100" />{" "}
             </Link>
-            <Link href="/notifications">
+            <Link href="/pages/notifications">
               <Bell className="cursor-pointer hover:scale-140 hover:text-primary ease-in duration-100" />
             </Link>
-            <Link href="/interested">
+            <Link href="/pages/interested">
               <ShoppingBag className="cursor-pointer hover:scale-140 hover:text-primary ease-in duration-100" />
             </Link>
-            <Link href="/profile">
+            <Link href="/pages/profile">
               {" "}
               <User className="cursor-pointer hover:scale-140 hover:text-primary ease-in duration-100" />
             </Link>
           </div>
         ) : (
-          <Link href="/login">
+          <Link href="/pages/login">
             <Button variant="ghost">Se connecter</Button>
           </Link>
         )}

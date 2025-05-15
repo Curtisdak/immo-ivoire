@@ -14,23 +14,54 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  firstname     String
-  lastname      String
-  email         String         @unique
-  phone         String?        @unique
-  emailVerified Boolean        @default(false)
-  phoneVerified Boolean        @default(false)
-  role          Role           @default(USER)
-  otp           String?
-  otpExpiresAt  DateTime?
-  otpAttempts   Int            @default(0)
-  bookmarks     Bookmark[]
-  interests     Interest[]
-  notifications Notification[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  House         House[]
+  id             String         @id @default(uuid())
+  firstname      String
+  lastname       String
+  email          String         @unique
+  avatar         String?
+  hashedPassword String?
+  phone          String?        @unique
+  emailVerified  DateTime?
+  phoneVerified  Boolean        @default(false)
+  role           Role           @default(USER)
+  otp            String?
+  otpExpiresAt   DateTime?
+  otpAttempts    Int            @default(0)
+  resetToken     String?
+  resetExpires   DateTime?
+  bookmarks      Bookmark[]
+  interests      Interest[]
+  accounts       Account[]
+  sessions       Session[]
+  notifications  Notification[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  House          House[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  access_token      String?
+  refresh_token     String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  user              User    @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model House {
@@ -86,12 +117,11 @@ model Notification {
 }
 
 model SystemControl {
-  id              Int      @id @default(1)
-  allowAdmins     Boolean  @default(true)
-  allowSuperAdmins Boolean @default(true)
-  updatedAt         DateTime @updatedAt
+  id               Int      @id @default(1)
+  allowAdmins      Boolean  @default(true)
+  allowSuperAdmins Boolean  @default(true)
+  updatedAt        DateTime @updatedAt
 }
-
 
 enum Role {
   USER
@@ -110,5 +140,3 @@ enum NotificationType {
   INTEREST
   SYSTEM
 }
-
-

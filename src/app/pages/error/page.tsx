@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function ErrorPage() {
   const router = useRouter();
   const searchParams = useSearchParams()
-  const errorMessage = searchParams.get('message') || "une erreur est inconnue est surnvenue"
+  const errorMessage = searchParams.get('message')  ;
 
   const handleBack = () => {
     router.back(); // Revenir à la page précédente
