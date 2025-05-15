@@ -26,7 +26,7 @@ const NavBar = () => {
         <Link href={"/pages/properties"}> <li className="">Trouver votre maison</li></Link>
         <li>Comment ça functionne?</li>
         <li>Nous Contacter</li>
-        {user?.id&&<button onClick={()=> signOut()}>deconnextion</button>}
+        {user?.id&&<button onClick={()=> signOut({callbackUrl:"/"})}>deconnextion</button>}
       </ul>
 
       <div className="flex items-center gap-5 justify-between p-3">
