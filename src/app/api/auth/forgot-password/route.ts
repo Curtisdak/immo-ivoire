@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       to: email,
       subject: "Réinitialisation de votre mot de passe",
       html: `
+             <h2>Demande de réinitialisation</h2>
              <p>Bonjour ${user.firstname} </p>
              <p> Voici votre lien pour réinitialiser votre mot de passe : </p>
              <a href="${resetUrl}" target="_blank">${resetUrl}</a>

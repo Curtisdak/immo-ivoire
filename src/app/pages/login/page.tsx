@@ -59,7 +59,7 @@ export default function LoginPage() {
        router.push(res.url);
      
       } 
-       console.info("login page")
+      
     }
   };
   if (loading) {
