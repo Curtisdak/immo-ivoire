@@ -15,6 +15,7 @@ datasource db {
 
 model User {
   id             String         @id @default(uuid())
+  name           String?
   firstname      String
   lastname       String
   email          String         @unique
@@ -51,7 +52,7 @@ model Account {
   token_type        String?
   scope             String?
   id_token          String?
-  user              User    @relation(fields: [userId], references: [id])
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade )
 
   @@unique([provider, providerAccountId])
 }
@@ -61,31 +62,32 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model House {
-  id               String      @id @default(uuid())
+  id               String       @id @default(uuid())
   title            String
   description      String
   price            Float
   location         String
-  propertyType     String?
+  propertyType     PropertyType @default(HOUSE)
   rooms            Int // Total rooms (e.g. living room, kitchen, bedrooms)
   bedrooms         Int // Number of bedrooms
-  isSwimmingPool   Boolean     @default(false)
-  isPrivateParking Boolean     @default(false)
+  isSwimmingPool   Boolean      @default(false)
+  isPrivateParking Boolean      @default(false)
   propertySize     Float // e.g., in m²
   landSize         Float // e.g., in m²
-  viewCount        Int         @default(0)
-  status           HouseStatus @default(AVAILABLE)
+  viewCount        Int          @default(0)
+  for              HouseIsFor   @default(SELL)
+  status           HouseStatus  @default(AVAILABLE)
   imageUrls        String[] // Cloudinary URLs (limit 15 in app logic)
   postedById       String
-  postedBy         User        @relation(fields: [postedById], references: [id])
+  postedBy         User         @relation(fields: [postedById], references: [id])
   interests        Interest[]
   bookmarks        Bookmark[]
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model Interest {
@@ -133,7 +135,22 @@ enum Role {
 enum HouseStatus {
   AVAILABLE
   SOLD
+  RENTED
   PENDING
+}
+
+enum HouseIsFor {
+  SELL
+  RENT
+}
+
+enum PropertyType {
+  HOUSE
+  LAND
+  APPARTMENT
+  BUILDING
+  FARMING
+  SHOP
 }
 
 enum NotificationType {
