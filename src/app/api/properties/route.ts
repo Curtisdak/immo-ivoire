@@ -16,16 +16,17 @@ export const houseSchema = z.object({
  "BUILDING",
  "FARMING",
  "SHOP"]).optional().default("HOUSE"),
-  rooms: z.number().int().min(1),
-  bedrooms: z.number().int().min(0),
+  rooms: z.number().positive().min(0),
+  bedrooms: z.number().positive().min(0),
   isSwimmingPool: z.boolean().optional().default(false),
   isPrivateParking: z.boolean().optional().default(false),
-  propertySize: z.number().positive(),
-  landSize: z.number().positive(),
+  propertySize: z.number().positive().optional(),
+  landSize: z.number().positive().optional(),
   imageUrls: z.array(z.string()).max(10),
   for:z.enum(["SELL","RENT"]).optional().default("SELL"),
   status: z
-    .enum(["AVAILABLE", "SOLD", "PENDING"])
+
+    .enum(["AVAILABLE", "SOLD","RENTED", "PENDING"])
     .optional()
     .default("AVAILABLE"),
 });
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
       data: {  ...parsed.data, postedById:userId},
     });
 
-return NextResponse.json({success:true, house},{status:200})
+return NextResponse.json({success:true, message:"Propriété publiée avec succès !", house},{status:200})
 
   } catch (error) {
     console.log({errorMessage:"THIS IS THE ERROR ABOUT POSTING A PROPERTY : ",error})
