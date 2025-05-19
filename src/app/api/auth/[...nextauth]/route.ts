@@ -6,6 +6,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { handleJWT, handleSession } from "@/lib/auth-callbacks";
 import { compare } from "bcryptjs";
+import { randomUUID } from "crypto";
 
 export const authOption: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -13,6 +14,21 @@ export const authOption: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization:
+        "https://accounts.google.com/o/oauth2/v2/auth?prompt=consent&access_type=offline&response_type=code",
+
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          firstname: profile.given_name ?? profile.name?.split(" ")[0],
+          lastname: profile.family_name ?? profile.name?.split(" ")[1],
+          email: profile.email,
+          avatar: profile.picture,
+          emailVerified: profile.email_verified ? new Date() : null,
+          role: "USER",
+        };
+      },
     }),
 
     CredentialsProvider({
@@ -57,9 +73,39 @@ export const authOption: NextAuthOptions = {
     jwt: handleJWT,
     session: handleSession,
 
-    async redirect({baseUrl}){
-      return `${baseUrl}/pages/properties`
-    }
+    async signIn({ user, account }) {
+
+   const dbUser = await prisma.user.findUnique({
+    where:{id:user.id}
+   })
+
+   if(!dbUser){
+    console.log("USER NOT FOUND IN DB YET? SKIP SESSION CREATION")
+    return true
+   }
+    
+
+      await prisma.session.deleteMany({
+        where: { userId: user.id },
+      });
+
+      const sessionToken =
+        typeof account?.access_token === "string"
+          ? account.access_token
+          : randomUUID();
+
+      await prisma.session.create({
+        data: {
+          userId: user?.id,
+          sessionToken,
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+        },
+      });
+      return true;
+    },
+    async redirect({ baseUrl }) {
+      return `${baseUrl}/pages/properties`;
+    },
   },
   pages: {
     signIn: "/pages/login",

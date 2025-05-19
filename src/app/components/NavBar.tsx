@@ -27,6 +27,9 @@ const NavBar = () => {
         <li>Comment ça functionne?</li>
         <li>Nous Contacter</li>
         {user?.id&&<button onClick={()=> signOut({callbackUrl:"/"})}>deconnextion</button>}
+        <Link href={"/pages/add-property"}> <li className="text-primary bg-blue-600">add new</li></Link>
+        
+
       </ul>
 
       <div className="flex items-center gap-5 justify-between p-3">
