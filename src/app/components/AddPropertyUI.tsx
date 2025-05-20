@@ -17,7 +17,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { ImageDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,27 +26,37 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingPage } from "./LoadingSpinner";
+import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
+import { UploadThingError } from "uploadthing/server";
+import { Json } from "@uploadthing/shared";
 
 export const houseSchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(10).max(1000),
-  price:  z.coerce.number().int().min(0),
-  location: z.string(),
-  propertyType: z.enum(["HOUSE", "LAND", "APPARTMENT", "BUILDING", "FARMING", "SHOP"]).optional().default("HOUSE"),
-  rooms: z.coerce.number().int().min(0),
-  bedrooms: z.coerce.number().int().min(0),
+  price: z.number().positive(),
+  location: z.string().min(2),
+  propertyType: z.enum([
+    "HOUSE",
+    "LAND",
+    "APPARTMENT",
+    "BUILDING",
+    "FARMING",
+    "SHOP",
+  ]),
+  rooms: z.number().int().min(0),
+  bedrooms: z.number().int().min(0),
   isSwimmingPool: z.boolean().default(false),
   isPrivateParking: z.boolean().default(false),
-  propertySize: z.coerce.number().int().optional(),
-  landSize:z.coerce.number().int().optional(),
-  imageUrls: z.array(z.string()).max(10,{message:"Limiter à 10 images"}),
-  for: z.enum(["SELL", "RENT"]).optional().default("SELL"),
-  status: z.enum(["AVAILABLE", "SOLD", "PENDING"]).optional().default("AVAILABLE"),
+  propertySize: z.number().positive().optional(),
+  landSize: z.number().positive().optional(),
+  imageUrls: z.array(z.string()).min(1, "Ajoute au moins une image").max(10),
+  for: z.enum(["SELL", "RENT"]),
+  status: z.enum(["AVAILABLE", "SOLD", "PENDING"]),
 });
 
 const AddPropertyUI = () => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof houseSchema>>({
     resolver: zodResolver(houseSchema),
@@ -63,7 +72,7 @@ const AddPropertyUI = () => {
       isPrivateParking: false,
       propertySize: 0,
       landSize: 0,
-      imageUrls: [""],
+      imageUrls: [],
       for: "SELL",
       status: "AVAILABLE",
     },
@@ -74,16 +83,16 @@ const AddPropertyUI = () => {
       setIsLoading(true);
       const res = await fetch("/api/properties", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
       const data = await res.json();
-      if (!res.ok) return toast.error(data.error || "Erreur lors de la publication");
-      toast.success(data.message || "Propriété publiée avec succès !");
+      if (!res.ok)
+        return toast.error(data.error || "Erreur lors de la publication");
+      toast.success("Propriété publiée !");
       router.push("/pages/admin");
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
       toast.error("Erreur réseau");
-      router.push("/pages/error?message=problèmes+lien+au+serveur");
     } finally {
       setIsLoading(false);
     }
@@ -92,170 +101,269 @@ const AddPropertyUI = () => {
   if (isLoading) return <LoadingPage />;
 
   return (
-    <div className="p-5 w-full max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center">Publier une propriété</h1>
+    <div className="p-5 w-full">
+      <h1 className="text-2xl font-bold mb-6">Publier une propriété</h1>
+
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 w-full max-w-3xl mx-auto bg-background border p-6 rounded-xl  "
+        >
+          {/* Image Upload */}
           <FormField
             control={form.control}
             name="imageUrls"
             render={({ field }) => (
+              <FormItem className="space-y-2 w-full">
+                <FormLabel className="text-base font-semibold text-primary  ">
+                  Photos
+                </FormLabel>
+                <UploadDropzone
+                  className="ut-button:bg-primary ut-button:text-white ut-uploading:bg-muted border-2 border-dashed border-muted rounded-xl p-6 bg-background transition-shadow hover:shadow-md"
+                  appearance={{
+                    container: "bg-card",
+                    uploadIcon: "w-8 h-8 text-muted-foreground", 
+                    button:"bg-primary text-white  p-4",
+                          // 👈 taille réduite de l’icône ici
+                  }}
+                  {...field}
+                  endpoint="imageUploader"
+                  onClientUploadComplete={(res) => {
+                    const urls = res.map((f) => f.ufsUrl);
+                    form.setValue("imageUrls", urls);
+                    toast.success("Images ajoutées !");
+                  }}
+                  onUploadError={(error: UploadThingError<Json>) => {
+                    toast.error("Erreur lors du téléversement.");
+                    console.error("Erreur UploadThing:", error);
+                  }}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Images (URLs séparées par virgule)</FormLabel>
+                <FormLabel>Titre</FormLabel>
                 <FormControl>
-                  <Input placeholder="https://img1.jpg, https://img2.jpg" {...field} />
+                  <Input {...field} className="bg-input" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField control={form.control} name="title" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Titre</FormLabel>
-              <FormControl>
-                <Input placeholder="Titre de la propriété..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="location" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Localisation</FormLabel>
-              <FormControl>
-                <Input placeholder="Abidjan, Cocody" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control} name="propertyType" render={({ field }) => (
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="HOUSE">Maison</SelectItem>
-                    <SelectItem value="APPARTMENT">Appartement</SelectItem>
-                    <SelectItem value="SHOP">Magasin</SelectItem>
-                    <SelectItem value="FARMING">Terrain agricole</SelectItem>
-                    <SelectItem value="LAND">Terrain</SelectItem>
-                  </SelectContent>
-                </Select>
+                <FormLabel>Localisation</FormLabel>
+                <FormControl>
+                  <Input {...field} className="bg-input" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
-            )} />
+            )}
+          />
 
-            <FormField control={form.control} name="for" render={({ field }) => (
-              <FormItem>
-                <FormLabel>À</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="À vendre/louer" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="SELL">Vendre</SelectItem>
-                    <SelectItem value="RENT">Louer</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+          <div className="flex flex-wrap gap-4">
+            <FormField
+              control={form.control}
+              name="propertyType"
+              render={({ field }) => (
+                <FormItem className="flex-1 ">
+                  <FormLabel>Type</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="HOUSE">Maison</SelectItem>
+                      <SelectItem value="APPARTMENT">Appartement</SelectItem>
+                      <SelectItem value="SHOP">Magasin</SelectItem>
+                      <SelectItem value="FARMING">Agricole</SelectItem>
+                      <SelectItem value="LAND">Terrain</SelectItem>
+                      <SelectItem value="BUILDING">Immeuble</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
 
-            <FormField control={form.control} name="status" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    <SelectItem value="AVAILABLE">Disponible</SelectItem>
-                    <SelectItem value="SOLD">Vendu</SelectItem>
-                    <SelectItem value="PENDING">En attente</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <FormField
+              control={form.control}
+              name="for"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>À vendre / louer</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="SELL">Vente</SelectItem>
+                      <SelectItem value="RENT">Location</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
 
-            <FormField control={form.control} name="price" render={({ field }) => (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="AVAILABLE">Disponible</SelectItem>
+                      <SelectItem value="SOLD">Vendu</SelectItem>
+                      <SelectItem value="PENDING">En attente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Prix</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input type="number" {...field} className="bg-input" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
-            )} />
+            )}
+          />
 
-            <FormField control={form.control} name="rooms" render={({ field }) => (
+          <div className="flex flex-wrap gap-4">
+            <FormField
+              control={form.control}
+              name="rooms"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Pièces</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} className="bg-input" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bedrooms"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Chambres</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} className="bg-input" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="landSize"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Pièces</FormLabel>
+                <FormLabel>Surface du terrain (m²)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input type="number" {...field} className="bg-input" />
                 </FormControl>
-                <FormMessage />
               </FormItem>
-            )} />
+            )}
+          />
 
-            <FormField control={form.control} name="bedrooms" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Chambres</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="landSize" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Surface terrain (m²)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="propertySize" render={({ field }) => (
+          <FormField
+            control={form.control}
+            name="propertySize"
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Surface habitable (m²)</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input type="number" {...field} className="bg-input" />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <div className="flex gap-8 items-center">
+            <FormField
+              control={form.control}
+              name="isSwimmingPool"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2">
+                  <FormLabel>Piscine</FormLabel>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="bg-input"
+                  />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isPrivateParking"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2">
+                  <FormLabel>Parking privé</FormLabel>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="bg-input"
+                  />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea rows={4} {...field} className="bg-input" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
-            )} />
-          </div>
-
-          <div className="flex gap-6">
-            <FormField control={form.control} name="isSwimmingPool" render={({ field }) => (
-              <FormItem className="flex items-center gap-2">
-                <FormLabel>Piscine</FormLabel>
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="isPrivateParking" render={({ field }) => (
-              <FormItem className="flex items-center gap-2">
-                <FormLabel>Parking privé</FormLabel>
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-              </FormItem>
-            )} />
-          </div>
-
-          <FormField control={form.control} name="description" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea rows={6} placeholder="Décrivez la propriété..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
+            )}
+          />
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Chargement..." : "Publier"}
+            Publier la propriété
           </Button>
         </form>
       </Form>
