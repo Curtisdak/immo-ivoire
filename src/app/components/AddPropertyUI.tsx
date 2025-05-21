@@ -6,6 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   Form,
   FormControl,
@@ -26,9 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingPage } from "./LoadingSpinner";
-import { UploadButton, UploadDropzone } from "@/lib/uploadthing";
-import { UploadThingError } from "uploadthing/server";
-import { Json } from "@uploadthing/shared";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { ImageDown, LoaderCircle, X } from "lucide-react";
 
 export const houseSchema = z.object({
   title: z.string().min(3).max(100),
@@ -56,7 +56,11 @@ export const houseSchema = z.object({
 
 const AddPropertyUI = () => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [images, setImages] = useState<{ url: string; public_id: string }[]>(
+    []
+  );
+  const [uploading, setUploading] = useState(false);
 
   const form = useForm<z.infer<typeof houseSchema>>({
     resolver: zodResolver(houseSchema),
@@ -77,7 +81,124 @@ const AddPropertyUI = () => {
       status: "AVAILABLE",
     },
   });
+  // ----------------------------------  IMAGE UPLOAD   ---------------------------
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement> | { target: { files: File[] } }
+  ) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
 
+    for (const file of files) {
+      if (images.length >= 10) {
+        toast.warning("Limite de 10 images atteinte");
+        break;
+      }
+
+      if (file.size > 32 * 1024 * 1024) {
+        toast.error(`${file.name} dépasse 32 Mo`);
+        continue;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        setUploading(true);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur d'upload");
+
+        const { secure_url, public_id } = data.data;
+        const newImage = { url: secure_url, public_id };
+
+        setImages((prev) => {
+          const updated = [...prev, newImage];
+          form.setValue(
+            "imageUrls",
+            updated.map((img) => img.url)
+          );
+
+          // Auto-delete after 10 minutes
+          setTimeout(() => {
+            const stillExists = images.find(
+              (img) => img.public_id === newImage.public_id
+            );
+            if (stillExists) {
+              fetch("/api/delete", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ public_id: newImage.public_id }),
+              }).then(() => {
+                setImages((prev) =>
+                  prev.filter((img) => img.public_id !== newImage.public_id)
+                );
+                form.setValue(
+                  "imageUrls",
+                  form
+                    .getValues("imageUrls")
+                    .filter((url) => url !== newImage.url)
+                );
+                toast.info("Image supprimée automatiquement après 10 min");
+              });
+            }
+          }, 10 * 60 * 1000); // 10 minutes
+
+          return updated;
+        });
+      } catch (err) {
+        toast.error(`Erreur lors de l'upload de ${file.name}`);
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  // ----------------------------------  IMAGE REMOVAL FROM CLOUDINARY   ---------------------------
+
+  const handleDeleteImage = async (public_id: string, url: string) => {
+    try {
+      await fetch("/api/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_id }),
+      });
+      setImages((prev) => prev.filter((img) => img.public_id !== public_id));
+      form.setValue(
+        "imageUrls",
+        form.getValues("imageUrls").filter((imgUrl) => imgUrl !== url)
+      );
+    } catch (err) {
+      toast.error("Erreur lors de la suppression de l’image");
+    }
+  };
+
+  // ----------------------------------  DELETE UPLOAD WHEN USER CANCEL THE FORM  ---------------------------
+
+  const handleCancelUpload = async () => {
+    if (images.length === 0) return;
+
+    try {
+      await Promise.all(
+        images.map((img) =>
+          fetch("/api/delete", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ public_id: img.public_id }),
+          })
+        )
+      );
+      setImages([]);
+      form.setValue("imageUrls", []);
+      toast.success("Images supprimées");
+    } catch (err) {
+      toast.error("Erreur lors de l’annulation");
+    }
+  };
+
+  // ----------------------------------  SUBMIT MY FORM  ---------------------------
   const onSubmit = async (values: z.infer<typeof houseSchema>) => {
     try {
       setIsLoading(true);
@@ -107,42 +228,103 @@ const AddPropertyUI = () => {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 w-full max-w-3xl mx-auto bg-background border p-6 rounded-xl  "
+          className="space-y-6 w-full max-w-3xl mx-auto bg-background border p-6 rounded-xl"
         >
-          {/* Image Upload */}
-          <FormField
-            control={form.control}
-            name="imageUrls"
-            render={({ field }) => (
-              <FormItem className="space-y-2 w-full">
-                <FormLabel className="text-base font-semibold text-primary  ">
-                  Photos
-                </FormLabel>
-                <UploadDropzone
-                  className="ut-button:bg-primary ut-button:text-white ut-uploading:bg-muted border-2 border-dashed border-muted rounded-xl p-6 bg-background transition-shadow hover:shadow-md"
-                  appearance={{
-                    container: "bg-card",
-                    uploadIcon: "w-8 h-8 text-muted-foreground", 
-                    button:"bg-primary text-white  p-4",
-                          // 👈 taille réduite de l’icône ici
-                  }}
-                  {...field}
-                  endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
-                    const urls = res.map((f) => f.ufsUrl);
-                    form.setValue("imageUrls", urls);
-                    toast.success("Images ajoutées !");
-                  }}
-                  onUploadError={(error: UploadThingError<Json>) => {
-                    toast.error("Erreur lors du téléversement.");
-                    console.error("Erreur UploadThing:", error);
-                  }}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div
+            onDrop={(e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files);
+              if (files.length) {
+                handleImageUpload({ target: { files } } as any);
+              }
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            className="w-full  border-2 border-dashed border-muted p-6 rounded-lg text-center cursor-pointer hover:bg-muted/40 transition"
+          >
+            <div className="flex flex-col justify-center items-center">
+              {uploading ? (
+                <LoaderCircle className="font-extrabold text-primary size-32 animate-spin " />
+              ) : (
+                <ImageDown className="font-extrabold size-32 " />
+              )}
+              <p className="text-sm text-muted-foreground">
+                {uploading
+                  ? "téléchargement ..."
+                  : "Glissez une image ici ou cliquez"}
+              </p>
+            </div>
+            <Input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              disabled={uploading || images.length >= 10}
+              className="mt-2 cursor-pointer"
+            />
+          </div>
 
+          <DragDropContext
+            onDragEnd={(result) => {
+              if (!result.destination) return;
+              const reordered = [...images];
+              const [removed] = reordered.splice(result.source.index, 1);
+              reordered.splice(result.destination.index, 0, removed);
+              setImages(reordered);
+              form.setValue(
+                "imageUrls",
+                reordered.map((img) => img.url)
+              );
+            }}
+          >
+            <Droppable droppableId="images" direction="horizontal">
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="flex flex-wrap gap-4 mt-2"
+                >
+                  {images.map((img, index) => (
+                    <Draggable
+                      key={img.public_id}
+                      draggableId={img.public_id}
+                      index={index}
+                    >
+                      {(provided) => (
+                        <div
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          ref={provided.innerRef}
+                          className="relative w-16 h-21 lg:w-32 lg:h-42 rounded overflow-hidden border .item-bounce-in "
+                        >
+                          <Image
+                            src={img.url}
+                            alt="uploaded"
+                            fill
+                            className="object-cover"
+                          />
+
+                          <Button
+                            variant={"destructive"}
+                            type="button"
+                            onClick={() =>
+                              handleDeleteImage(img.public_id, img.url)
+                            }
+                            className="absolute top-1 w-4 h-4 right-1 text-white text-xs p-1 rounded-full"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          {/* Other form fields (title, description, etc.) should follow here as-is */}
+          {/*
           <FormField
             control={form.control}
             name="title"
@@ -362,9 +544,25 @@ const AddPropertyUI = () => {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            Publier la propriété
-          </Button>
+          */}
+          <div className="flex gap-4 items-center justify-end">
+            <Button
+              variant={"secondary"}
+              type="button"
+              className=" font-semibold  "
+              onClick={handleCancelUpload}
+              disabled={isLoading}
+            >
+              Annulez
+            </Button>
+            <Button
+              type="submit"
+              className=" font-semibold text-white "
+              disabled={isLoading}
+            >
+              Publier la propriété
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
