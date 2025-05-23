@@ -29,12 +29,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LoadingPage } from "./LoadingSpinner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { ImageDown, LoaderCircle, X } from "lucide-react";
+import imageCompression from "browser-image-compression";
 
 export const houseSchema = z.object({
-  title: z.string().min(3).max(100),
+  title: z.string().min(3).max(15,{message:"il ya plus de 15 lettres"}),
   description: z.string().min(10).max(1000),
-  price: z.number().positive(),
-  location: z.string().min(2),
+  price: z.coerce.number().positive(),
+  location: z.string().min(2).max(45,{message:"il ya plus de 45 lettres"}),
   propertyType: z.enum([
     "HOUSE",
     "LAND",
@@ -43,12 +44,12 @@ export const houseSchema = z.object({
     "FARMING",
     "SHOP",
   ]),
-  rooms: z.number().int().min(0),
-  bedrooms: z.number().int().min(0),
+  rooms: z.coerce.number().int().min(0),
+  bedrooms: z.coerce.number().int().min(0),
   isSwimmingPool: z.boolean().default(false),
   isPrivateParking: z.boolean().default(false),
-  propertySize: z.number().positive().optional(),
-  landSize: z.number().positive().optional(),
+  propertySize: z.coerce.number().positive().optional().default(0),
+  landSize: z.coerce.number().positive().optional().default(0),
   imageUrls: z.array(z.string()).min(1, "Ajoute au moins une image").max(10),
   for: z.enum(["SELL", "RENT"]),
   status: z.enum(["AVAILABLE", "SOLD", "PENDING"]),
@@ -81,7 +82,7 @@ const AddPropertyUI = () => {
       status: "AVAILABLE",
     },
   });
-  // ----------------------------------  IMAGE UPLOAD   ---------------------------
+  // ----------------------------------  IMAGE UPLOAD FUCNTION  ---------------------------
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement> | { target: { files: File[] } }
   ) => {
@@ -98,9 +99,15 @@ const AddPropertyUI = () => {
         toast.error(`${file.name} dépasse 32 Mo`);
         continue;
       }
+//------------------ COMPRESSING THE FILE BEFORE UPLOADING TO CLOUDINARY -------------
+      const compressedFile =await imageCompression(file,{
+        maxSizeMB:2,// taille max finale
+        maxWidthOrHeight:1600,// redimensionnement max
+        useWebWorker:true,
+      });
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressedFile);
 
       try {
         setUploading(true);
@@ -149,6 +156,7 @@ const AddPropertyUI = () => {
           return updated;
         });
       } catch (err) {
+        console.log(err)
         toast.error(`Erreur lors de l'upload de ${file.name}`);
       } finally {
         setUploading(false);
@@ -235,22 +243,22 @@ const AddPropertyUI = () => {
               e.preventDefault();
               const files = Array.from(e.dataTransfer.files);
               if (files.length) {
-                handleImageUpload({ target: { files } } as any);
+                handleImageUpload({ target: { files } } as never);
               }
             }}
             onDragOver={(e) => e.preventDefault()}
-            className="w-full  border-2 border-dashed border-muted p-6 rounded-lg text-center cursor-pointer hover:bg-muted/40 transition"
+            className="w-full  border-3 border-dashed border-muted p-2 rounded-lg text-center cursor-pointer hover:bg-muted/40 transition"
           >
             <div className="flex flex-col justify-center items-center">
               {uploading ? (
                 <LoaderCircle className="font-extrabold text-primary size-32 animate-spin " />
               ) : (
-                <ImageDown className="font-extrabold size-32 " />
+                <ImageDown className="font-extrabold size-32 text-primary " />
               )}
               <p className="text-sm text-muted-foreground">
                 {uploading
                   ? "téléchargement ..."
-                  : "Glissez une image ici ou cliquez"}
+                  : "Glissez une image ici ou cliquez (Max 10)"}
               </p>
             </div>
             <Input
@@ -294,7 +302,7 @@ const AddPropertyUI = () => {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                           ref={provided.innerRef}
-                          className="relative w-16 h-21 lg:w-32 lg:h-42 rounded overflow-hidden border .item-bounce-in "
+                          className="relative w-16 h-21 lg:w-32 lg:h-42 rounded overflow-hidden border  "
                         >
                           <Image
                             src={img.url}
@@ -304,14 +312,14 @@ const AddPropertyUI = () => {
                           />
 
                           <Button
-                            variant={"destructive"}
+                           
                             type="button"
                             onClick={() =>
                               handleDeleteImage(img.public_id, img.url)
                             }
-                            className="absolute top-1 w-4 h-4 right-1 text-white text-xs p-1 rounded-full"
+                            className="absolute top-0 w-3 h-3 right-0 text-white text-xs px-0 py-3 rounded-full bg-gray-600 hover:bg-red-500"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3 h-3" />
                           </Button>
                         </div>
                       )}
@@ -324,7 +332,7 @@ const AddPropertyUI = () => {
           </DragDropContext>
 
           {/* Other form fields (title, description, etc.) should follow here as-is */}
-          {/*
+          
           <FormField
             control={form.control}
             name="title"
@@ -544,7 +552,7 @@ const AddPropertyUI = () => {
             )}
           />
 
-          */}
+          {/* - ---------------------  FINAL BUTTONS ------------------ */}
           <div className="flex gap-4 items-center justify-end">
             <Button
               variant={"secondary"}
