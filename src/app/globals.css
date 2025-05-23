@@ -124,3 +124,44 @@ body {
     height: 100vh;
     overflow-x: hidden;
 }
+
+.item-bounce-in {
+    animation: bounce-in-zoomout 2s linear ease-in-out 1 normal none;
+}
+
+@keyframes bounce-in-zoomout {
+    0% {
+        transform: scale(0);
+        animation-timing-function: ease-in;
+        opacity: 0;
+    }
+    35% {
+        transform: scale(1);
+        animation-timing-function: ease-out;
+        opacity: 1;
+    }
+    55% {
+        transform: scale(.7);
+        animation-timing-function: ease-in;
+    }
+    70% {
+        transform: scale(1);
+        animation-timing-function: ease-out;
+    }
+    80% {
+        transform: scale(.84);
+        animation-timing-function: ease-in;
+    }
+    90% {
+        transform: scale(1);
+        animation-timing-function: ease-out;
+    }
+    95% {
+        transform: scale(.95);
+        animation-timing-function: ease-in;
+    }
+    100% {
+        transform: scale(1);
+        animation-timing-function: ease-out;
+    }
+}
