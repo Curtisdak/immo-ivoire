@@ -52,7 +52,7 @@ export const houseSchema = z.object({
   landSize: z.coerce.number().positive().optional().default(0),
   imageUrls: z.array(z.string()).min(1, "Ajoute au moins une image").max(10),
   for: z.enum(["SELL", "RENT"]),
-  status: z.enum(["AVAILABLE", "SOLD", "PENDING"]),
+  status: z.enum(["AVAILABLE", "SOLD","RENTED", "PENDING"]),
 });
 
 const AddPropertyUI = () => {
@@ -432,6 +432,7 @@ const AddPropertyUI = () => {
                     <SelectContent>
                       <SelectItem value="AVAILABLE">Disponible</SelectItem>
                       <SelectItem value="SOLD">Vendu</SelectItem>
+                       <SelectItem value="RENTED">Loué</SelectItem>
                       <SelectItem value="PENDING">En attente</SelectItem>
                     </SelectContent>
                   </Select>

@@ -53,7 +53,7 @@ const PropertiesPage = () => {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Les maisons</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4  ">
         {properties.map((property) => (
           <motion.div
             key={property.id}
@@ -64,6 +64,8 @@ const PropertiesPage = () => {
             
              
                 <MainPropertyCard
+                  propertyId = {property.id}
+                  postedBy = {property.postedBy.email}
                   images={property.imageUrls}
                   title={property.title}
                   location={property.location}

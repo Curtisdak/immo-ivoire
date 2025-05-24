@@ -3,17 +3,20 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { Heart, ChevronLeft, ChevronRight, Bed, DoorOpen } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface PropertyCardProps {
+  propertyId:string,
+  postedBy:string,
   images: string[];
   title: string;
   location: string;
   price: number;
   rooms: number;
   bedrooms: number;
-  forWhat:"SELL" | "RENT";
+  forWhat: "SELL" | "RENT";
   status?: "AVAILABLE" | "SOLD" | "RENTED" | "PENDING";
   onLike?: () => void;
   liked?: boolean;
@@ -21,6 +24,8 @@ interface PropertyCardProps {
 }
 
 const MainPropertyCard: React.FC<PropertyCardProps> = ({
+  propertyId,
+  postedBy,
   images,
   title,
   location,
@@ -28,13 +33,16 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
   rooms,
   bedrooms,
   forWhat,
-  status="AVAILABLE" ,
+  status = "AVAILABLE",
   onLike,
   liked = false,
   onView,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const {data:session} = useSession()
+  const currentUser = session?.user;
+  
 
   const handleDotClick = (index: number) => {
     setCurrentIndex(index);
@@ -78,8 +86,9 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
   }[status];
 
   return (
-    <div className="relative w-full max-w-sm rounded-xl overflow-hidden shadow-md shadow-muted  bg-background opacity-100 lg:opacity-50 lg:hover:opacity-100 ease-in duration-400">
+    <div className="relative mt-4 w-full max-w-sm rounded-xl overflow-hidden shadow-md shadow-muted  bg-transparent opacity-100  ease-in duration-400">
       {/* Image Slider */}
+      <div className="flex justify-between  items-center p-2"> {currentUser?.role.includes("SUPERADMIN")||currentUser?.role.includes("CREATOR") && <p>{postedBy}</p>  }  <Button variant={"secondary"}>Modifiez</Button> </div>
       <div
         className="relative w-full h-64"
         onTouchStart={handleSwipeStart}
@@ -154,47 +163,54 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
       </div>
 
       {/* Property Info */}
-      <div className="p-4 space-y-1">
+      <div className="p-4 space-y-1 bg-card">
         <div className="flex flex-wrap items-baseline-last justify-between">
           <h3 className="text-lg font-semibold ">{title}</h3>
-          <p className="text-muted-foreground text-sm font-bold">
-            {price.toLocaleString()} FCFA
+          <p className="text-muted-foreground">
+            {forWhat.includes("SELL") ? "à vendre" : "à louer"}
           </p>
         </div>
-         <p className="text-muted-foreground">{forWhat.includes("SELL")? "à vendre":"à louer"}</p>
+        <p className="text-muted-foreground text-sm font-bold">
+          {price.toLocaleString()} FCFA
+        </p>
         <p className="text-md text-muted-foreground line-clamp-1">{location}</p>
 
         <div className="flex flex-wrap items-baseline-last justify-start gap-2">
-         { rooms>0&& <span className="p-1 rounded-xl items-center-safe flex gap-1 bg-primary/10">
-          {/*---------------- Room  ---------- */}
-            {" "}
-            <DoorOpen  className="text-muted-foreground" />{" "}
-            <p className="hidden text-sm text-muted-foreground lg:flex">
-              {rooms>1? "Pièces":"Pièce"}
-            </p>{" "}
-            <span className="p-1 text-white font-bold rounded-full bg-primary/70">
+          {rooms > 0 && (
+            <span className="p-1 rounded-xl items-center-safe flex gap-1 bg-primary/10">
+              {/*---------------- Room  ---------- */}{" "}
+              <DoorOpen className="text-muted-foreground" />{" "}
+              <p className="hidden text-sm text-muted-foreground lg:flex">
+                {rooms > 1 ? "Pièces" : "Pièce"}
+              </p>{" "}
+              <span className="p-1 text-white font-bold rounded-full bg-primary/70">
+                {" "}
+                {rooms}{" "}
+              </span>{" "}
+            </span>
+          )}
+          {/*---------------- Bedroom---------- */}
+          {bedrooms > 0 && (
+            <span className="p-1 rounded-xl items-center-safe flex gap-1 bg-primary/10">
               {" "}
-              {rooms}{" "}
-            </span>{" "}
-          </span>}
-{/*---------------- Bedroom---------- */}
-          {bedrooms>0&& <span className="p-1 rounded-xl items-center-safe flex gap-1 bg-primary/10">
-            {" "}
-            <Bed className="text-muted-foreground" />{" "}
-            <p className="hidden text-sm text-muted-foreground lg:flex">
-              {bedrooms>1? "Chambres":"Chambre"}
-            </p>{" "}
+              <Bed className="text-muted-foreground" />{" "}
+              <p className="hidden text-sm text-muted-foreground lg:flex">
+                {bedrooms > 1 ? "Chambres" : "Chambre"}
+              </p>{" "}
               <span className="p-1 text-white font-bold rounded-full bg-primary/70">
                 {" "}
                 {bedrooms}{" "}
               </span>{" "}
-          </span>}
-         {/*---------------- for sell / rent ---------- */}
-        
+            </span>
+          )}
+          {/*---------------- for sell / rent ---------- */}
         </div>
 
         <div className="flex justify-end">
-          <Button className="mt-2 font-bold bg-primary" onClick={onView}>
+          <Button
+            className="mt-2 font-bold hover:bg-accent hover:text-primary"
+            onClick={onView}
+          >
             Voir plus
           </Button>
         </div>
