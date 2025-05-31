@@ -52,7 +52,7 @@ model Account {
   token_type        String?
   scope             String?
   id_token          String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade )
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -91,21 +91,27 @@ model House {
 }
 
 model Interest {
-  id        String   @id @default(uuid())
-  userId    String
-  houseId   String
-  user      User     @relation(fields: [userId], references: [id])
-  house     House    @relation(fields: [houseId], references: [id])
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  houseId      String
+  isInterested Boolean  @default(false)
+  user         User     @relation(fields: [userId], references: [id])
+  house        House    @relation(fields: [houseId], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, houseId])
 }
 
 model Bookmark {
-  id        String   @id @default(uuid())
-  userId    String
-  houseId   String
-  user      User     @relation(fields: [userId], references: [id])
-  house     House    @relation(fields: [houseId], references: [id])
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  houseId    String
+  isBookmark Boolean  @default(false)
+  user       User     @relation(fields: [userId], references: [id])
+  house      House    @relation(fields: [houseId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, houseId])
 }
 
 model Notification {
