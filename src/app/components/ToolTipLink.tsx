@@ -29,3 +29,20 @@ export function TooltipLink({tiplink,logo,linkText,content}:TooltipLinkProps) {
     </TooltipProvider>
   )
 }
+
+
+export function TooltipCustom({logo,content}:TooltipLinkProps) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+           {logo}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
