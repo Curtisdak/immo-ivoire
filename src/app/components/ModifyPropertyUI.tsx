@@ -59,8 +59,8 @@ export const houseSchema = z.object({
   ]),
   rooms: z.coerce.number().int().min(0),
   bedrooms: z.coerce.number().int().min(0),
-  isSwimmingPool: z.boolean().default(false),
-  isPrivateParking: z.boolean().default(false),
+  isSwimmingPool: z.boolean(),
+  isPrivateParking: z.boolean(),
   propertySize: z.coerce.number().positive().optional().default(0),
   landSize: z.coerce.number().positive().optional().default(0),
   imageUrls: z.array(z.string()).min(1, "Ajoute au moins une image").max(10),
@@ -254,6 +254,7 @@ const [id] = useState(property.id);
       router.push("/pages/admin");
     } catch (err) {
       toast.error("Erreur réseau");
+      console.log(err)
     } finally {
       setIsLoading(false);
     }

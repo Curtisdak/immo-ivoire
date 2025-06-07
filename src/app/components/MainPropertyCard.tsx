@@ -10,9 +10,11 @@ import DeletePropertyUI from "./DeletePropertyUI";
 import ModifyPropertyUI from "./ModifyPropertyUI";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import  {HouseWithRelations} from "../../types/HouseWithRelations"
 
 interface PropertyCardProps {
-  propertyId: string;
+   property: HouseWithRelations;
+ /* propertyId: string;
   postedBy: string;
   images: string[];
   title: string;
@@ -34,41 +36,43 @@ interface PropertyCardProps {
   status?: "AVAILABLE" | "SOLD" | "RENTED" | "PENDING";
   isSwimmingPool: boolean;
   isPrivateParking: boolean;
-  isBookmarked:boolean;
-  bookmarks: { id: string; userId: string; houseId: string; isBookmark: true };
-  // interests:[];
+  isBookmarked: boolean;
+  bookmarkCount: number;*/
   onView?: () => void;
   onDelete?: (id: string) => void;
 }
 
-const MainPropertyCard: React.FC<PropertyCardProps> = ({
-  propertyId,
-  postedBy,
-  images,
-  title,
-  location,
-  propertyType = "HOUSE",
-  description,
-  price,
-  rooms,
-  propertySize,
-  isSwimmingPool,
-  isPrivateParking,
-  landSize,
-  bedrooms,
-  forWhat,
-  status = "AVAILABLE",
-  isBookmarked,
-  bookmarks,
-  // interests,
-  onView,
-  onDelete,
-}) => {
+const MainPropertyCard: React.FC<PropertyCardProps> = ({property,onView,onDelete}) => {
+
+  const {
+    id,
+    title,
+    description,
+    price,
+    location,
+    propertyType,
+    rooms,
+    bedrooms,
+    isSwimmingPool,
+    isPrivateParking,
+    propertySize,
+    landSize,
+    imageUrls,
+    for: forWhat,
+    status,
+    isBookmarked,
+    bookmarkCount, 
+} = property;
+
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const { data: session } = useSession();
   const currentUser = session?.user;
   const [liked, setLiked] = useState<boolean>(isBookmarked);
+  const [bookmarkTotal, setBookmarkTotal] = useState<number>(
+    bookmarkCount ?? 0
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
@@ -84,19 +88,19 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
     if (touchStartX.current === null) return;
     const diff = e.changedTouches[0].clientX - touchStartX.current;
     if (diff > 50) {
-      setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+      setCurrentIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1));
     } else if (diff < -50) {
-      setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+      setCurrentIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0));
     }
     touchStartX.current = null;
   };
 
   const goToPrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0));
   };
 
   const statusLabel = {
@@ -128,6 +132,7 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
           data.liked ? "Ajouté aux favoris !" : "Retiré des favoris !"
         );
         setLiked(data.liked);
+        setBookmarkTotal((prev) => prev + (data.liked ? 1 : -1));
       } else {
         toast.error("ce button ne fonctionne pas !");
       }
@@ -142,14 +147,14 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
   return (
     <div className="relative mt-4 w-full max-w-sm rounded-xl overflow-hidden shadow-md shadow-muted  bg-transparent opacity-100  ease-in duration-400">
       {/* Image Slider */}
-      <div className="flex justify-between  items-center p-2">
+    
         {" "}
         {["ADMIN", "SUPERADMIN", "CREATOR"].includes(
-          currentUser?.role ?? ""
-        ) && <p className="text-muted-foreground ">{postedBy}</p>}{" "}
+          currentUser?.role ?? "") &&   <div className="flex justify-between  items-center p-2">
+           <p className="text-muted-foreground ">{property.postedBy.email ?? ""}</p>
         <ModifyPropertyUI
           property={{
-            id: propertyId,
+            id: id ,
             title,
             description,
             price,
@@ -161,18 +166,20 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
             isPrivateParking,
             propertySize,
             landSize,
-            imageUrls: images,
+            imageUrls,
             for: forWhat,
             status,
-          }}
-        />{" "}
-      </div>
+          }} />
+      </div>}
+
+
+
       <div
         className="relative w-full h-64  "
         onTouchStart={handleSwipeStart}
         onTouchEnd={handleSwipeEnd}
       >
-        {images.map((img, i) => (
+        {imageUrls.map((img, i) => (
           <Image
             key={i}
             src={img}
@@ -214,7 +221,7 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Dots */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3 z-20">
-          {images.map((_, i) => (
+          {imageUrls.map((_, i) => (
             <button
               key={i}
               onClick={() => handleDotClick(i)}
@@ -228,7 +235,7 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Like Button */}
         <button
-          onClick={() => handleLike(propertyId)}
+          onClick={() => handleLike(id)}
           disabled={loading}
           className={cn(
             "absolute bottom-3 left-3 z-20 bg- p-1 rounded-full shadow-md hover:scale-125 ease-in-out duration-500",
@@ -295,7 +302,7 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({
             <span className="absolute left-0 bottom-0">
               {" "}
               <DeletePropertyUI
-                propertyId={propertyId}
+                propertyId={id}
                 onDelete={(id) => onDelete?.(id)}
                 alertTitle={"Es-tu sûr de vouloir supprimer cette propriété ?"}
                 alertDesc={

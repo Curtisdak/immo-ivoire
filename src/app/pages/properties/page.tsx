@@ -1,64 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import MainPropertyCard from "@/app/components/MainPropertyCard"; // adapte ce chemin selon l’emplacement réel
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useProperties } from "@/app/context/PropertiesContext";
 
-export type HouseWithRelations = {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  location: string;
-  propertyType:
-    | "HOUSE"
-    | "LAND"
-    | "APPARTMENT"
-    | "BUILDING"
-    | "FARMING"
-    | "SHOP";
-  rooms: number;
-  bedrooms: number;
-  isSwimmingPool: boolean;
-  isPrivateParking: boolean;
-  propertySize?: number;
-  landSize?: number;
-  imageUrls: string[];
-  for: "SELL" | "RENT";
-  status: "AVAILABLE" | "SOLD" | "RENTED" | "PENDING";
-  createdAt: string;
-  updatedAt: string;
-  postedBy: {
-    id: string;
-    firstname: string;
-    lastname: string;
-    email: string;
-    avatar: string | null;
-  };
-  isBookmarked: boolean;
-  interests: { id: string; userId: string; houseId: string; isInterested:boolean };
-  bookmarks: { id: string; userId: string; houseId: string; isBookmarked:boolean };
-};
 
 const PropertiesPage = () => {
-  const [properties, setProperties] = useState<HouseWithRelations[]>([]);
+ const { properties, setProperties } = useProperties();
   const router = useRouter();
 
-  const getProperties = async () => {
-    const res = await fetch("/api/properties?page=1&limit=30");
-    const data = await res.json();
-    if (data.success) {
-      setProperties(data.properties);
-    } else {
-      console.error("Erreur:", data.error);
-    }
-  };
-
-  useEffect(() => {
-    getProperties();
-  }, []);
 
   const deleteProperty = async (id: string) => {
     try {
@@ -95,25 +48,8 @@ const PropertiesPage = () => {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <MainPropertyCard
-              propertyId={property.id}
-              postedBy={property.postedBy.email}
-              images={property.imageUrls}
-              title={property.title}
-              location={property.location}
-              propertyType={property.propertyType}
-              propertySize={property.propertySize ?? 0}
-              description={property.description}
-              landSize={property.landSize ?? 0}
-              isSwimmingPool={property.isSwimmingPool}
-              isPrivateParking={property.isSwimmingPool}
-              price={property.price}
-              rooms={property.rooms}
-              bedrooms={property.bedrooms}
-              status={property.status}
-              forWhat={property.for}
-              onDelete={deleteProperty}
-             isBookmarked={property.isBookmarked}
-              // interests={property.interests}
+            property={property}
+            onDelete={deleteProperty}
             />
 
          

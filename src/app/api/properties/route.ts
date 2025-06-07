@@ -108,11 +108,22 @@ export async function GET(req: NextRequest) {
           },
           interests: {
             where: { userId: session?.user.id },
-            select: { id: true, userId:true, houseId:true,isInterested:true },
+            select: {
+              id: true,
+              userId: true,
+              houseId: true,
+              isInterested: true,
+            },
           },
           bookmarks: {
             where: { userId: session?.user.id },
-            select: { id: true, userId:true, houseId:true,isBookmark:true },
+            select: { id: true, userId: true, houseId: true, isBookmark: true },
+          },
+          _count: {
+            select: {
+              bookmarks: true,
+              interests:true, // 👈 this gives total bookmark count
+            },
           },
         },
       }),
@@ -126,15 +137,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const result = properties.map((prop) =>({
+    const result = properties.map((prop) => ({
       ...prop,
       isBookmarked: prop.bookmarks.length > 0,
-    }) )
+      bookmarkCount:prop._count.bookmarks,
+      isInterested:prop.interests.length>0,
+      interestCount:prop._count.interests,
+    }));
 
     return NextResponse.json(
       {
         success: true,
-        properties:result,
+        properties: result,
         total,
         page,
         totalPages: Math.ceil(total / limit),
