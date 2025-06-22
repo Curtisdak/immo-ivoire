@@ -1,30 +1,28 @@
-"use client";
+"use client"
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
-import { useAuth } from "../../context/auth-context";
-import Link from "next/link";
+import React from 'react'
 
-const DashboardPage = () => {
-  // const [loading, setLoading] = useState(true)
-  const { user, logout } = useAuth();
 
-  console.log(user);
+const AdminPage =  () => {
 
+  const {data:Session} =  useSession() 
+  const router = useRouter()
+
+ 
+
+  const currentUser = Session?.user
+
+  if(currentUser?.role.includes("USER")){
+    return router.push("/pages/error")
+  }
   return (
     <div>
-      <h1>DashBoard</h1>
-      <p> Bonjour {user?.email}</p>
-      {user ? (
-        <button
-          onClick={logout}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-        >
-          se deconnecter{" "}
-        </button>
-      ) : (
-        <Link href="/pages/login">Se connecter</Link>
-      )}
+      <h1>{currentUser?.email}</h1>
+      
     </div>
-  );
-};
+  )
+}
 
-export default DashboardPage;
+export default AdminPage

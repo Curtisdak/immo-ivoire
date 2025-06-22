@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthSessionProvider } from "../app/components/AuthSessionProvider";
 import { PropertiesProvider } from "../app/context/PropertiesContext";
 import PhoneNavBar from "./components/PhoneNavBar";
+import "yet-another-react-lightbox/styles.css";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

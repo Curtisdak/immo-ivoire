@@ -60,7 +60,7 @@ export default function SideBar() {
               currentUser?.role ?? ""
             ) && (
               <Link
-                href="/pages/Admin"
+                href="/pages/admin"
                 className="gap-4 w-full flex  hover:text-primary hover:scale-125 duration-500"
               >
                 {" "}

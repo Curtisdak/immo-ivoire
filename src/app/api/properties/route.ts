@@ -1,4 +1,4 @@
-import { authOption } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -33,7 +33,7 @@ const ALLOWED_ROLES = ["ADMIN", "SUPERADMIN", "CREATOR"];
 const ALLOWED_ROLES_FINAL = ["SUPERADMIN", "CREATOR"];
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOption);
+  const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
     return NextResponse.json(
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOption);
+    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(req.url);
 
     const page = parseInt(searchParams.get("page") || "1");
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
           },
           bookmarks: {
             where: { userId: session?.user.id },
-            select: { id: true, userId: true, houseId: true, isBookmark: true },
+            select: { id: true, userId: true, houseId: true, isBookmarked: true },
           },
           _count: {
             select: {
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const result = properties.map((prop) => ({
+    const result = properties.map((prop: any) => ({
       ...prop,
       isBookmarked: prop.bookmarks.length > 0,
       bookmarkCount:prop._count.bookmarks,
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
 // ----------------------------------- UPDATE --------------------
 
 export async function PUT(req: Request) {
-  const session = await getServerSession(authOption);
+  const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
     return NextResponse.json(
@@ -238,7 +238,7 @@ export async function PUT(req: Request) {
 //---------------------------------- DELETE -------------------------------------
 
 export async function DELETE(req: Request) {
-  const session = await getServerSession(authOption);
+  const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
     return NextResponse.json(

@@ -106,7 +106,7 @@ model Bookmark {
   id         String   @id @default(uuid())
   userId     String
   houseId    String
-  isBookmark Boolean  @default(false)
+  isBookmarked Boolean  @default(false)
   user       User     @relation(fields: [userId], references: [id])
   house      House    @relation(fields: [houseId], references: [id])
   createdAt  DateTime @default(now())

@@ -24,7 +24,7 @@ export const PropertiesProvider = ({ children }: { children: React.ReactNode }) 
       if (data.success) {
         setProperties(data.properties);
       } else {
-        toast.error("Erreur lors du chargement");
+        toast.error("Erreur lors du chargement des proprietés");
       }
     } catch (error) {
       console.error("Erreur réseau:", error);

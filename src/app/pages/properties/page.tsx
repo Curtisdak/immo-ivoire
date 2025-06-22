@@ -7,11 +7,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useProperties } from "@/app/context/PropertiesContext";
 
-
 const PropertiesPage = () => {
- const { properties, setProperties } = useProperties();
+  const { properties, setProperties } = useProperties();
   const router = useRouter();
-
 
   const deleteProperty = async (id: string) => {
     try {
@@ -36,6 +34,21 @@ const PropertiesPage = () => {
     }
   };
 
+  const viewProperty = async (id: string) => {
+  
+    try {
+      await fetch(`/api/properties/${id}/view`, {
+        method: "PATCH",
+      });
+
+      router.push(`/pages/properties/${id}`);
+    } catch (error) {
+      console.error("Erreur lors de l'incrémentation des vues:", error);
+      toast.error("Impossible d'enregistrer la vue.");
+      router.push(`/pages/properties/${id}`); // rediriger quand même
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Les maisons</h1>
@@ -48,11 +61,10 @@ const PropertiesPage = () => {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             <MainPropertyCard
-            property={property}
-            onDelete={deleteProperty}
+              property={property}
+              onDelete={deleteProperty}
+              onView={viewProperty}
             />
-
-         
           </motion.div>
         ))}
       </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { Bell, Divide, Heart, ShoppingBag, User } from "lucide-react";
+// import { Bell, Divide, Heart, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import SideBar from "./SideBar";
 import { ModeToggle } from "./ModeToggle";
 import { Button } from "@/components/ui/button";
-import { signOut, useSession } from "next-auth/react";
+import {useSession } from "next-auth/react";
 
 const NavBar = () => {
   const { data: session } = useSession();

@@ -38,7 +38,7 @@ interface PropertyCardProps {
   isPrivateParking: boolean;
   isBookmarked: boolean;
   bookmarkCount: number;*/
-  onView?: () => void;
+  onView?: (id:string) => void;
   onDelete?: (id: string) => void;
 }
 
@@ -313,7 +313,7 @@ const MainPropertyCard: React.FC<PropertyCardProps> = ({property,onView,onDelete
           )}
           <Button
             className="mt-2 font-bold hover:bg-accent hover:text-primary"
-            onClick={onView}
+           onClick={()=> onView?.(property.id)}
           >
             Voir plus
           </Button>
